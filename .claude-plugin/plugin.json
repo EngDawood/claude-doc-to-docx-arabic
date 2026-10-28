@@ -1,0 +1,20 @@
+{
+  "name": "doc-to-word-rtl",
+  "version": "0.4.0",
+  "description": "Converts a Claude Doc to Word (.docx): Arabic docs right-to-left in a Saudi thesis style, English docs in APA 7, with pictures and charts.",
+  "author": {
+    "name": "EngDawood",
+    "url": "https://github.com/EngDawood"
+  },
+  "homepage": "https://github.com/EngDawood/claude-doc-to-docx-arabic",
+  "repository": "https://github.com/EngDawood/claude-doc-to-docx-arabic",
+  "license": "MIT",
+  "keywords": [
+    "arabic",
+    "rtl",
+    "docx",
+    "word",
+    "claude-docs",
+    "apa"
+  ]
+}

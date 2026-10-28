@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "doc-to-docx-arabic",
+  "owner": {
+    "name": "EngDawood",
+    "url": "https://github.com/EngDawood"
+  },
+  "metadata": {
+    "description": "Claude Doc to Word, Arabic RTL and English APA 7."
+  },
+  "plugins": [
+    {
+      "name": "doc-to-word-rtl",
+      "source": "./",
+      "description": "Converts a Claude Doc to Word (.docx): Arabic docs right-to-left in a Saudi thesis style, English docs in APA 7, with pictures and charts.",
+      "category": "Documents & Academic Writing"
+    }
+  ]
+}
