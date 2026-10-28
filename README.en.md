@@ -6,6 +6,16 @@
 
 Claude Docs can export to `.docx`, but that export carries no right-to-left settings and drops pictures and charts. Arabic paragraphs come out left-aligned, tables read from the wrong side, and every chapter needs manual reformatting in Word. This plugin replaces that export with two scripts that build the file in the right direction and the right style from the start.
 
+## Recommended workflow: write in Claude Docs, convert to Word at the end
+
+When you work on a paper or report with Claude, ask it to write in a Claude Doc rather than straight into a Word file:
+
+- **History is kept:** the doc records every edit, so you can go back to any earlier version.
+- **Edits land in place:** Claude changes the paragraph or table you asked about inside the doc itself, and you can comment on any part for it to revise.
+- **Word files are heavy to edit:** working in a Word file means that every change has Claude open the file, edit it, rebuild it and send it again, which is slower and more error-prone.
+
+When the doc is done, this plugin turns it into a Word file in the right style with one request, using a script inside it that runs automatically. If you change the doc afterwards, run the conversion again for an updated Word file.
+
 ## What it does
 
 Give Claude a Claude Doc link and ask for Word. It:
