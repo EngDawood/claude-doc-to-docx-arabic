@@ -1,6 +1,6 @@
 {
   "name": "doc-to-word-rtl",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Converts a Claude Doc to Word (.docx): Arabic docs right-to-left in a Saudi thesis style, English docs in APA 7, with pictures and charts.",
   "author": {
     "name": "EngDawood",
