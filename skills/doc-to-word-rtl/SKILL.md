@@ -3,6 +3,12 @@ name: doc-to-word-rtl
 description: Exports a Claude Doc (claude.ai artifact link) to a Word .docx, Arabic docs in a right-to-left Saudi thesis house style and English docs in APA 7. Use when asked to turn a Claude Doc into Word, docx, ملف وورد or تحويل المستند إلى ورد. Also read for a formal Arabic Word report with a cover page, table of contents and APA references (docx فورمال, غلاف + فهرس).
 category: Documents & Academic Writing
 title_ar: تحويل مستندات Claude إلى ورد (عربي RTL و APA)
+license: MIT
+metadata:
+  author: Dawood Saleh
+  author_url: https://engdawood.com
+  version: '0.6.0'
+  repository: https://github.com/EngDawood/claude-doc-to-docx-arabic
 ---
 
 # Claude Doc → Word
