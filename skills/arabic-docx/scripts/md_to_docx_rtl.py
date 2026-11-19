@@ -5,8 +5,10 @@ Claude Doc markdown export -> house-style RTL .docx.
 Usage: python3 md_to_docx_rtl.py INPUT OUTPUT.docx [options]
 INPUT: a .md file, or the JSON file Claude Docs `export` saves ({"data": {"bytes_b64": ...}}).
 
-Front matter: everything before the first `##` heading is the cover page. It is centered and
-ends with a page break; a table of contents page follows (a live Word TOC field that Word fills
+Front matter: everything before the first `##` heading is the cover page: each line its own
+centered paragraph (lines above the `#` title are the institution block, bold at the top; the
+title sits lower and large; a table there becomes centered "label: value" lines, never a Word
+table; the last line, the date or year, is pushed down). It ends with a page break; a table of contents page follows (a live Word TOC field that Word fills
 on open), then the body starts in a new section whose page numbers start at 1.
 Equations: `$$...$$`, `\\[...\\]`, a line that is only `$...$`, and a bare formula line such as
 `Z = 3.3X_1 + 1.2X_2` become native Word equations (OMML), not plain text.
@@ -516,16 +518,64 @@ def add_toc(doc, cfg):
     doc.settings.element.append(upd)
 
 
+GENERIC_HEAD_RE = re.compile(r'^(البيان|البند|العنصر|الحقل|التفاصيل|القيمة|المعلومات|البيانات|Item|Field|Details|Value|Info)$', re.I)
+
+
+def add_cover_fields(doc, rows, cfg):
+    """A table on the cover becomes centered lines, never a Word table.
+    Two columns with a generic header (البيان | التفاصيل) or none: 'label: value' per row.
+    Otherwise (a team list: الاسم | الرقم الجامعي): the header as a bold line, then each row joined by ' - '."""
+    header, body = rows[0], rows[1:]
+    two = max(len(r) for r in rows) == 2
+    if two and all(GENERIC_HEAD_RE.match(c.strip('* ')) or not c for c in header):
+        lines = [f'**{r[0]}:** {r[1]}' if r[0] else r[1] for r in body if len(r) >= 2]
+    elif two and not body:
+        lines = [f'**{header[0]}:** {header[1]}']
+    else:
+        lines = ['**' + ' - '.join(c for c in header if c) + '**'] + [' - '.join(c for c in r if c) for r in body]
+    for t in lines:
+        p = doc.add_paragraph(); rtl = is_rtl_text(t, cfg.doc_rtl); set_par_dir(p, rtl)
+        add_inline(p, t, cfg, rtl, size=cfg.size)
+        cfg.cover_fields.add(p._p)
+
+
+def layout_cover(doc, cfg):
+    """Cover page layout: institution lines at the top (bold, tight), the title lower down and large,
+    the fields (names, IDs, supervisor) under it, and the last line (date / year) pushed down."""
+    paras = [p for p in doc.paragraphs if ''.join(p._p.itertext()).strip() or p._p.find('.//' + qn('w:drawing')) is not None]
+    ti = next((k for k, p in enumerate(paras) if p.style.name == 'Title'), None)
+    for k, p in enumerate(paras):
+        if p._p.find('.//' + qn('m:oMathPara')) is not None:
+            continue
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        pf = p.paragraph_format; pf.first_line_indent = None; pf.left_indent = None
+        if ti is None:
+            para_spacing(p, cfg, before=0, after=10); continue
+        if k < ti:  # institution block
+            para_spacing(p, cfg, before=0, after=2, line=1.0)
+            for r in p.runs:
+                r.bold = True
+        elif k == ti:  # title
+            para_spacing(p, cfg, before=110 if ti else 160, after=70, line=1.0)
+            for r in p.runs:
+                r.font.size = Pt(cfg.size + 10); r._r.get_or_add_rPr()
+                rpr = r._r.rPr; cs = rpr.find(qn('w:szCs'))
+                if cs is None:
+                    cs = OxmlElement('w:szCs'); rpr.append(cs)
+                cs.set(qn('w:val'), str(int((cfg.size + 10) * 2)))
+        else:  # fields under the title
+            last = k == len(paras) - 1 and k > ti + 1 and p._p not in cfg.cover_fields
+            para_spacing(p, cfg, before=70 if last else 0, after=8, line=1.0)
+
+
 def end_front_matter(doc, cfg):
-    """Cover done: center it, add the contents page, and start the body in a section numbered from 1."""
+    """Cover done: lay it out, add the contents page, and start the body in a section numbered from 1."""
     body = doc.element.body
     # a trailing '---' page break would leave a blank page before the section break
     last = body[-2] if body[-1].tag == qn('w:sectPr') else body[-1]
     if last.tag == qn('w:p') and last.find('.//' + qn('w:br')) is not None and not ''.join(last.itertext()).strip():
         body.remove(last)
-    for p in doc.paragraphs:
-        if p._p.find('.//' + qn('m:oMathPara')) is None:
-            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    layout_cover(doc, cfg)
     if cfg.toc_on:
         doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
         add_toc(doc, cfg)
@@ -649,12 +699,24 @@ def add_table(doc, rows, cfg):
     cfg.after_table = True
 
 
+# A heading that only labels the cover ("## صفحة الغلاف"): its content joins the cover, the heading is dropped.
+COVER_H_RE = re.compile(r'^(صفحة\s+)?(ال)?غلاف|^صفحة\s+العنوان$|^(cover|title)(\s+page)?$', re.I)
+
+
+def is_cover_heading(text):
+    return bool(COVER_H_RE.match(text.strip('*_: ').strip()))
+
+
 def has_cover(lines):
-    """True when the doc has a cover: a title plus at least one more block before the first '##'."""
+    """True when the doc has a cover: a title plus at least one more block before the first '##'
+    (a '## صفحة الغلاف' heading does not end the cover; it always means there is one)."""
     blocks = 0
     for line in lines:
         s = line.strip()
-        if re.match(r'^#{2,6}\s', s):
+        hm = re.match(r'^#{2,6}\s+(.*)$', s)
+        if hm and is_cover_heading(hm.group(1)):
+            return True
+        if hm:
             break
         if not s or s in ('---', '***', '___'):
             continue
@@ -719,6 +781,9 @@ def convert(md, out, cfg):
         if m:
             cfg.after_table = False
             level = len(m.group(1)); text = m.group(2).strip()
+            if level >= 2 and is_cover_heading(text) and not cfg.front and cfg.cover != 'off':
+                in_front = True  # cover label: drop it, its content stays on the cover
+                i += 1; continue
             if in_front and level >= 2:
                 end_front_matter(doc, cfg)
                 in_front = False
@@ -744,7 +809,10 @@ def convert(md, out, cfg):
             i += 2
             while i < n and lines[i].strip().startswith('|'):
                 rows.append(split_row(lines[i])); i += 1
-            add_table(doc, rows, cfg)
+            if in_front:
+                add_cover_fields(doc, rows, cfg)
+            else:
+                add_table(doc, rows, cfg)
             continue
         lm = re.match(r'^(\s*)([-*+]|\d+[.)])\s+(.*)$', line)
         if lm:
@@ -757,7 +825,7 @@ def convert(md, out, cfg):
             add_paragraph(doc, s.lstrip('>').strip(), cfg)
             i += 1; continue
         buf = [s]; i += 1
-        while (i < n and lines[i].strip() and not re.match(r'^(#{1,6}\s|\||[-*+]\s|\d+[.)]\s|```|>|\\?\$|\\\[)', lines[i].strip())
+        while (not in_front and i < n and lines[i].strip() and not re.match(r'^(#{1,6}\s|\||[-*+]\s|\d+[.)]\s|```|>|\\?\$|\\\[)', lines[i].strip())
                and not is_bare_equation(lines[i].strip())):
             buf.append(lines[i].strip()); i += 1
         text = ' '.join(buf)
@@ -805,6 +873,7 @@ def main():
     cfg.after_table = False
     cfg.eq_count = 0
     cfg.front = False
+    cfg.cover_fields = set()
     md = load_markdown(cfg.input)
     if cfg.dir == 'auto':
         cfg.doc_rtl = len(AR_RE.findall(md)) > len(LATIN_RE.findall(md))

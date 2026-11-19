@@ -59,14 +59,14 @@
 <div dir="ltr">
 
 ```bash
-npx skills add EngDawood/claude-doc-to-docx-arabic --skill doc-to-word-rtl
+npx skills add EngDawood/claude-doc-to-docx-arabic --skill arabic-docx
 ```
 
 </div>
 
 ### يدوياً
 
-انسخ المجلد `skills/doc-to-word-rtl` إلى `.claude/skills/` داخل المشروع، أو إلى `~/.claude/skills/` لحسابك.
+انسخ المجلد `skills/arabic-docx` إلى `.claude/skills/` داخل المشروع، أو إلى `~/.claude/skills/` لحسابك.
 
 تحتاج Python 3 مع مكتبة `python-docx` (`pip install python-docx`). أما LibreOffice و `pdftoppm` فيُستخدمان للتحقق البصري فقط.
 
@@ -88,8 +88,8 @@ npx skills add EngDawood/claude-doc-to-docx-arabic --skill doc-to-word-rtl
 <div dir="ltr">
 
 ```bash
-python3 skills/doc-to-word-rtl/scripts/md_to_docx_rtl.py chapter.md chapter.docx --images images.json
-python3 skills/doc-to-word-rtl/scripts/md_to_docx_en.py paper.md paper.docx --paper a4
+python3 skills/arabic-docx/scripts/md_to_docx_rtl.py chapter.md chapter.docx --images images.json
+python3 skills/arabic-docx/scripts/md_to_docx_en.py paper.md paper.docx --paper a4
 ```
 
 </div>
@@ -142,7 +142,7 @@ claude-doc-to-docx-arabic/
 ├── .claude-plugin/
 │   ├── plugin.json              تعريف الإضافة ورقم إصدارها
 │   └── marketplace.json         متجر بإضافة واحدة لـ Claude Code
-├── skills/doc-to-word-rtl/
+├── skills/arabic-docx/
 │   ├── SKILL.md                 الخطوات وجداول التنسيق لـ Claude
 │   └── scripts/
 │       ├── md_to_docx_rtl.py    العربي، من اليمين لليسار
