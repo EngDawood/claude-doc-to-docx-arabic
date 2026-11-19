@@ -1,6 +1,6 @@
 ---
 name: arabic-docx
-description: Builds Word .docx files, Arabic right-to-left in a Saudi thesis house style and English in APA 7, either from a Claude Doc (claude.ai artifact link) or directly with no Claude Doc. Use when asked to turn a Claude Doc into Word (ملف وورد, تحويل المستند إلى ورد), or to write a Word file straight away (docx مباشرة, ملف وورد بدون مستند). Also for a formal Arabic report with a cover page, table of contents and APA references (docx فورمال, غلاف + فهرس).
+description: Builds Arabic right-to-left Word .docx files (Saudi thesis house style; English in APA 7), from a Claude Doc or written directly. Use for Claude Doc to Word (تحويل المستند إلى ورد), a Word file with no Claude Doc (docx مباشرة), or a formal report with cover and contents (غلاف + فهرس).
 category: Documents & Academic Writing
 title_ar: تحويل مستندات Claude إلى ورد (عربي RTL و APA)
 ---
@@ -14,14 +14,14 @@ Turn a Claude Doc, or content you write yourself, into a .docx that opens in Wor
 
 The doc's language is the one most of its prose is written in; the client's instructions win when they name a style.
 
-**Cover, contents, equations (Arabic script).** `md_to_docx_rtl.py` builds them itself. Everything before the first `##` heading becomes a centered cover page on its own page; a contents page follows (a live Word TOC field of the `##` and `###` headings, filled by Word when the file opens); the body starts in a new section numbered from 1. `$$…$$`, `\[…\]`, a line that is only `$…$`, and a bare formula line such as `Z = 3.3X_1 + 1.2X_2` become native Word equations, never plain text. Read `references/formal-layout.md` only for what the script still lacks: an APA reference list for an Arabic report, charts drawn from data, or a contents page with its page numbers already written in for readers who open the file outside Word.
+**Cover, contents, equations (Arabic script).** `md_to_docx_rtl.py` builds them itself. Everything before the first `##` heading becomes the cover page (layout in the house-style table); a contents page follows (a live Word TOC field of the `##` and `###` headings, filled by Word when the file opens); the body starts in a new section numbered from 1. `$$…$$`, `\[…\]`, a line that is only `$…$`, and a bare formula line such as `Z = 3.3X_1 + 1.2X_2` become native Word equations, never plain text. Read `references/formal-layout.md` only for what the script still lacks: an APA reference list for an Arabic report, charts drawn from data, or a contents page with its page numbers already written in for readers who open the file outside Word.
 
 **Two routes.** Pick one before step 1:
 
 - **From a Claude Doc**: the user gives a doc link or asks to convert a doc. Run every step.
-- **Direct**: the user wants the Word file without a Claude Doc ("docx مباشرة", "بدون مستند", "ملف وورد فقط"), or names no doc and asks for a .docx. Skip steps 1 to 3: write the full content (not an outline) to `<scratch>/<title>.md` following *Writing the markdown* below, put pictures as `![alt](/abs/path.png)` lines, then run steps 4 to 8 with that file as the input.
+- **Direct**: the user wants a Word file and gives no Claude Doc. In place of steps 1 to 3, write the content to `<scratch>/<title>.md` by the rules in `references/writing-markdown.md`, then run steps 4 to 8 on it. Done when the file holds every section the user asked for, written in full, and every cover field is either filled or a `[…]` placeholder.
 
-A client's existing .docx to fill or edit is neither route: edit that file and keep its styles; never rebuild it from scratch.
+A client's existing .docx to fill or edit takes neither route: edit that file in place, keeping its styles.
 
 Build the final file with the script. The connector's own `docx` export carries no bidi settings, so its Arabic tables and paragraphs come out mirrored.
 
@@ -39,31 +39,20 @@ Build the final file with the script. The connector's own `docx` export carries 
 5. **Convert.** `python3 <base dir>/scripts/<script> <input> "<doc title>.docx" [--images <scratch>/images.json] [options]`, passing an option for every client-template value that differs from the house style. Done when the script prints `OK -> ...` and `images: N embedded, 0 missing` for every tab, and (Arabic) `cover+contents: yes` when the doc has a cover block before its first `##`, and an `equations:` count equal to the formulas in the doc; `direction: LTR` from the Arabic script on an Arabic doc means the script is damaged: stop and tell the user.
 6. **Verify.** `soffice --headless --convert-to pdf` (set `HOME=/tmp SAL_USE_VCLPLUGIN=svp` when it complains about a display), then `pdftoppm -r 60 -png` and view the cover page, the contents page, a body page, a table page, a numbered-list page, a page with a formula, and a page with a picture when there is one. Done when every page viewed passes every check:
    - layout matches the house-style table for the doc's language (Arabic: first table column on the right, grey header row; English: rules only above, below the header and at the bottom of tables);
-   - the cover sits alone on page 1 with no "صفحة الغلاف" label and no table, institution lines at the top and the title large below them; the contents page follows, and the body's first page is numbered 1 (LibreOffice shows the contents hint line instead of entries; Word fills the entries on open);
+   - the cover sits alone on page 1 and shows only its own lines, centered: institution block on top, title large below it, fields as `label: value` lines; the contents page follows, and the body's first page is numbered 1 (LibreOffice shows the contents hint line instead of entries; Word fills the entries on open);
    - headings placed per the house style (right-aligned Arabic headings sit on the right edge), and a multi-level number such as 2.1 shows the main number 2 on the right;
    - every formula is a centered equation with real subscripts, with no leftover `_`, `\`, or `$`;
    - each picture centered within the margins, its caption under it;
    - each numbered list starts at 1;
    - no box glyphs or reversed words.
    The render box usually lacks Traditional Arabic and substitutes a fallback face; judge layout, not typeface.
-7. **Deliver.** SendUserFile, file named after the doc title in the doc's language (never `output.docx`); leave no `v1`/`final` copies. Tell the user that Word asks to update fields when the file opens: answering Yes fills the contents with page numbers. Name anything still missing (comments, a picture that could not be fetched, every `[…]` placeholder left in the file) so the user can add it by hand.
+7. **Deliver.** SendUserFile, one clean file named after the doc title in the doc's language. Tell the user that Word asks to update fields when the file opens: answering Yes fills the contents with page numbers. Name anything still missing (comments, a picture that could not be fetched, every `[…]` placeholder left in the file) so the user can add it by hand.
 8. **Lesson.** Every run that hit a defect (a failed step, a wrong render, a user correction to the output) ends with a lesson for this skill. Done when each defect is either fixed in the skill's source or the user declined the fix:
    - Name the defect and its root cause in one line each, then propose the smallest change that prevents it: the script, the house-style table, or a step here.
    - Make the change only after the user approves the proposal.
    - Apply it in a working copy of this skill, rerun steps 5 and 6 on the same doc, and send the user the new .docx.
    - Once the user confirms the new output is correct, write the change into the skill's source, `EngDawood/claude-doc-to-docx-arabic` (`skills/arabic-docx`): a pull request that bumps `version` in `.claude-plugin/plugin.json`. For a copy installed in Claude (claude.ai / Cowork) as a `.plugin` file, also repackage it with the `cowork-plugin` skill (customize mode).
    - A defect the user declines stays as it is; keep the deliverable from step 7.
-
-## Writing the markdown (direct route, or checking an export)
-
-The scripts read plain markdown. Cover rules matter most: everything before the first real `##` is the cover page.
-
-- Cover: institution lines first, one per line (المملكة العربية السعودية / وزارة التعليم / الجامعة / الكلية); then `# Title`; then the fields as `**الطالبة:** الاسم` lines or a two-column table `| البند | البيان |` (the script prints a table there as centered `label: value` lines, never as a Word table); last, a date or year line on its own. Unknown fields stay as `[اسم المقرر]` placeholders; never invent them.
-- Do not write a "صفحة الغلاف" label to be printed. A `## صفحة الغلاف` heading is accepted (a Claude Doc often has one): the script drops it and keeps its content on the cover.
-- Body: `##` for sections (they fill the contents page), `###` for subsections, numbered as `1.1` when the client numbers headings.
-- Tables: pipe tables with a caption line above, `جدول (1): …`; a `المصدر: …` line under one when there is a source.
-- Equations: `$$…$$`. Page break: `---`. References: under `## المراجع`, one entry per paragraph.
-- English doc (`md_to_docx_en.py`): no cover page or contents page is built; title-page lines under the `#` title print as ordinary paragraphs.
 
 ## Arabic house style (`md_to_docx_rtl.py`)
 
