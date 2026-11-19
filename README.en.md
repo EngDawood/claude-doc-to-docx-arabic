@@ -47,12 +47,12 @@ To update later:
 ### Any agent that supports `skills`
 
 ```bash
-npx skills add EngDawood/claude-doc-to-docx-arabic --skill doc-to-word-rtl
+npx skills add EngDawood/claude-doc-to-docx-arabic --skill arabic-docx
 ```
 
 ### Manual
 
-Copy `skills/doc-to-word-rtl` into `.claude/skills/` (project) or `~/.claude/skills/` (user).
+Copy `skills/arabic-docx` into `.claude/skills/` (project) or `~/.claude/skills/` (user).
 
 Requires Python 3 with `python-docx` (`pip install python-docx`). LibreOffice and `pdftoppm` are used only for the visual check.
 
@@ -68,8 +68,8 @@ Convert this to Word: https://claude.ai/artifact/XXXX
 The scripts also run on their own, on any markdown file:
 
 ```bash
-python3 skills/doc-to-word-rtl/scripts/md_to_docx_rtl.py chapter.md chapter.docx --images images.json
-python3 skills/doc-to-word-rtl/scripts/md_to_docx_en.py paper.md paper.docx --paper a4
+python3 skills/arabic-docx/scripts/md_to_docx_rtl.py chapter.md chapter.docx --images images.json
+python3 skills/arabic-docx/scripts/md_to_docx_en.py paper.md paper.docx --paper a4
 ```
 
 `images.json` lists the pictures in document order: `[{"alt": "...", "path": "..."}]`. Plain markdown images `![alt](path/to/image.png)` work too.
@@ -118,7 +118,7 @@ claude-doc-to-docx-arabic/
 ├── .claude-plugin/
 │   ├── plugin.json              plugin manifest and version
 │   └── marketplace.json         one-plugin marketplace for Claude Code
-├── skills/doc-to-word-rtl/
+├── skills/arabic-docx/
 │   ├── SKILL.md                 steps and house-style tables for Claude
 │   └── scripts/
 │       ├── md_to_docx_rtl.py    Arabic, right-to-left
